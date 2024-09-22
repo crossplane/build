@@ -50,7 +50,7 @@ UP_CHANNEL ?= stable
 UP := $(TOOLS_HOST_DIR)/up-$(UP_VERSION)
 
 # the version of crossplane cli to use
-CROSSPLANE_CLI_VERSION ?= v1.14.5
+CROSSPLANE_CLI_VERSION ?= v1.17.0
 CROSSPLANE_CLI_CHANNEL ?= stable
 CROSSPLANE_CLI := $(TOOLS_HOST_DIR)/crossplane-cli-$(CROSSPLANE_CLI_VERSION)
 
