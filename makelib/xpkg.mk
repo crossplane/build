@@ -19,13 +19,6 @@ ifeq ($(origin XPKG_DIR),undefined)
 XPKG_DIR := $(ROOT_DIR)/package
 endif
 
-# xref https://github.com/upbound/provider-aws/pull/647, https://github.com/upbound/up/pull/309
-# in up v0.16.0, support for ProviderConfig documentation via object annotations was added.
-# by convention, we will assume the extensions file resides in the package directory.
-ifeq ($(origin XPKG_AUTH_EXT),undefined)
-XPKG_AUTH_EXT := $(XPKG_DIR)/auth.yaml
-endif
-
 ifeq ($(origin XPKG_EXAMPLES_DIR),undefined)
 XPKG_EXAMPLES_DIR := $(ROOT_DIR)/examples
 endif
@@ -62,27 +55,23 @@ XPKG_PLATFORMS_LIST := $(subst _,/,$(filter linux_%,$(PLATFORMS)))
 XPKG_PLATFORM := $(subst _,/,$(PLATFORM))
 XPKG_CLEANUP_EXAMPLES_VERSION ?= v0.12.1
 
-# TODO(negz): Update these targets to use the crossplane CLI, not up.
-UP ?= up
-
 # =====================================================================================
 # XPKG Targets
 
 # 1: xpkg
 define xpkg.build.targets
-xpkg.build.$(1):
+xpkg.build.$(1): $(CROSSPLANE_CLI)
 	@rm -rf $(WORK_DIR)/xpkg-cleaned-examples
 	@GOOS=$(HOSTOS) GOARCH=$(TARGETARCH) go run github.com/upbound/uptest/cmd/cleanupexamples@$(XPKG_CLEANUP_EXAMPLES_VERSION) $(XPKG_EXAMPLES_DIR) $(WORK_DIR)/xpkg-cleaned-examples || $(FAIL)
 	@$(INFO) Building package $(1)-$(VERSION).xpkg for $(PLATFORM)
 	@mkdir -p $(OUTPUT_DIR)/xpkg/$(PLATFORM)
-	@controller_arg=$$$$(grep -E '^kind:\s+Provider\s*$$$$' $(XPKG_DIR)/crossplane.yaml > /dev/null && echo "--controller $(BUILD_REGISTRY)/$(1)-$(ARCH)"); \
-	$(UP) xpkg build \
-		$$$${controller_arg} \
+	@embed_image_arg=$$$$(grep -E '^kind:\s+Provider\s*$$$$' $(XPKG_DIR)/crossplane.yaml > /dev/null && echo "--embed-runtime-image $(BUILD_REGISTRY)/$(1)-$(ARCH)"); \
+	$(CROSSPLANE_CLI) xpkg build \
+		$$$${embed_image_arg} \
 		--package-root $(XPKG_DIR) \
-		--auth-ext $(XPKG_AUTH_EXT) \
 		--examples-root $(WORK_DIR)/xpkg-cleaned-examples \
 		--ignore $(XPKG_IGNORE) \
-		--output $(XPKG_OUTPUT_DIR)/$(PLATFORM)/$(1)-$(VERSION).xpkg || $(FAIL)
+		--package-file $(XPKG_OUTPUT_DIR)/$(PLATFORM)/$(1)-$(VERSION).xpkg || $(FAIL)
 	@$(OK) Built package $(1)-$(VERSION).xpkg for $(PLATFORM)
 	@rm -rf $(WORK_DIR)/xpkg-cleaned-examples
 xpkg.build: xpkg.build.$(1)
@@ -91,10 +80,10 @@ $(foreach x,$(XPKGS),$(eval $(call xpkg.build.targets,$(x))))
 
 # 1: registry/org 2: repo
 define xpkg.release.targets
-xpkg.release.publish.$(1).$(2):
+xpkg.release.publish.$(1).$(2): $(CROSSPLANE_CLI)
 	@$(INFO) Pushing package $(1)/$(2):$(VERSION)
-	@$(UP) xpkg push \
-		$(foreach p,$(XPKG_LINUX_PLATFORMS),--package $(XPKG_OUTPUT_DIR)/$(p)/$(2)-$(VERSION).xpkg ) \
+	@$(CROSSPLANE_CLI) xpkg push --package-files \
+		$(subst $(SPACE),$(COMMA),$(foreach p,$(XPKG_LINUX_PLATFORMS),$(XPKG_OUTPUT_DIR)/$(p)/$(2)-$(VERSION).xpkg)) \
 		$(1)/$(2):$(VERSION) || $(FAIL)
 	@$(OK) Pushed package $(1)/$(2):$(VERSION)
 xpkg.release.publish: xpkg.release.publish.$(1).$(2)
