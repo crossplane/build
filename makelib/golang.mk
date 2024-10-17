@@ -77,7 +77,7 @@ GO_VERSION := $(shell $(GO) version | sed -ne 's/[^0-9]*\(\([0-9]\.\)\{0,4\}[0-9
 
 # We use a consistent version of golangci-lint to ensure everyone gets the same
 # linters.
-GOLANGCILINT_VERSION ?= 1.54.0
+GOLANGCILINT_VERSION ?= 1.60.3
 GOLANGCILINT := $(TOOLS_HOST_DIR)/golangci-lint-v$(GOLANGCILINT_VERSION)
 
 GO_BIN_DIR := $(abspath $(OUTPUT_DIR)/bin)
