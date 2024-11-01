@@ -31,7 +31,7 @@ ifdef UPTEST_DEFAULT_TIMEOUT
 endif
 
 UPTEST_RENDER_ONLY ?= false
-ifeq ($(UPTEST_SKIP_DELETE),true)
+ifeq ($(UPTEST_RENDER_ONLY),true)
     UPTEST_ARGS += --render-only
 endif
 
