@@ -1,4 +1,4 @@
-# Copyright 2022 The Upbound Authors. All rights reserved.
+# Copyright 2025 The Crossplane Authors. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,13 +25,10 @@ local.xpkg.init: $(KUBECTL)
 	fi
 	@$(OK) patching Crossplane with dev sidecar
 
-# TODO(negz): Update this target to use the crossplane CLI, not up. We'll need
-# to add the `xpkg extract` subcommand to the crossplane CLI.
-
-local.xpkg.sync: local.xpkg.init $(UP)
+local.xpkg.sync: local.xpkg.init $(CROSSPLANE_CLI)
 	@$(INFO) copying local xpkg cache to Crossplane pod
 	@mkdir -p $(XPKG_OUTPUT_DIR)/cache
-	@for pkg in $(XPKG_OUTPUT_DIR)/linux_*/*; do $(UP) xpkg xp-extract --from-xpkg $$pkg -o $(XPKG_OUTPUT_DIR)/cache/$$(basename $$pkg .xpkg).gz; done
+	@for pkg in $(XPKG_OUTPUT_DIR)/linux_*/*; do $(CROSSPLANE_CLI) xpkg extract --from-xpkg $$pkg -o $(XPKG_OUTPUT_DIR)/cache/$$(basename $$pkg .xpkg).gz; done
 	@XPPOD=$$($(KUBECTL) -n $(CROSSPLANE_NAMESPACE) get pod -l app=crossplane,patched=true -o jsonpath="{.items[0].metadata.name}"); \
 		$(KUBECTL) -n $(CROSSPLANE_NAMESPACE) cp $(XPKG_OUTPUT_DIR)/cache -c dev $$XPPOD:/tmp
 	@$(OK) copying local xpkg cache to Crossplane pod
