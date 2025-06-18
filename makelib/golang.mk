@@ -36,6 +36,18 @@ GO_TEST_SUITE ?=
 GO_COVER_MODE ?= count
 GO_CGO_ENABLED ?= 0
 
+# Setup Go
+GO_STATIC_PACKAGES ?= $(GO_PROJECT)/cmd/...
+GO_SUBDIRS ?= cmd pkg
+GO111MODULE = on
+
+# Multi-arch build support
+ifdef MULTI_ARCH_BUILD
+GO_BUILD_PLATFORMS := $(BUILD_PLATFORMS)
+else
+GO_BUILD_PLATFORMS := $(PLATFORM)
+endif
+
 # ====================================================================================
 # Setup go environment
 
@@ -99,10 +111,22 @@ GO_GENERATE_FLAGS = $(GO_BUILDFLAGS) -tags 'generate $(GO_TAGS)'
 # Go Targets
 
 go.build:
+ifdef MULTI_ARCH_BUILD
+	@$(INFO) go build multi-arch
+	@mkdir -p $(OUTPUT_DIR)/bin
+	@echo "Building for platforms: $(GO_BUILD_PLATFORMS)"
+	@for p in $(GO_BUILD_PLATFORMS); do \
+		echo "Building for $$p"; \
+		mkdir -p $(OUTPUT_DIR)/bin/$$p; \
+		GOOS=$${p%_*} GOARCH=$${p#*_} CGO_ENABLED=0 $(GO) build $(GO_STATIC_FLAGS) -o $(OUTPUT_DIR)/bin/$$p/$(lastword $(subst /, ,$(GO_STATIC_PACKAGES)))$(GO_OUT_EXT) $(GO_STATIC_PACKAGES) || $(FAIL); \
+	done
+	@$(OK) go build multi-arch
+else
 	@$(INFO) go build $(PLATFORM)
 	$(foreach p,$(GO_STATIC_PACKAGES),@CGO_ENABLED=0 $(GO) build -v -o $(GO_OUT_DIR)/$(lastword $(subst /, ,$(p)))$(GO_OUT_EXT) $(GO_STATIC_FLAGS) $(p) || $(FAIL) ${\n})
 	$(foreach p,$(GO_TEST_PACKAGES) $(GO_LONGHAUL_TEST_PACKAGES),@CGO_ENABLED=0 $(GO) test -c -o $(GO_TEST_OUTPUT)/$(lastword $(subst /, ,$(p)))$(GO_OUT_EXT) $(GO_STATIC_FLAGS) $(p) || $(FAIL) ${\n})
 	@$(OK) go build $(PLATFORM)
+endif
 
 go.install:
 	@$(INFO) go install $(PLATFORM)
@@ -203,3 +227,6 @@ $(GOLANGCILINT):
 # The modules targets should be used instead.
 vendor: modules.download
 vendor.check: modules.check
+
+# Ensure go.build runs before img.build for multi-arch builds
+img.build: go.build

@@ -47,7 +47,9 @@ endif
 
 REGISTRY_ORGS ?= docker.io
 IMAGE_ARCHS := $(subst linux_,,$(filter linux_%,$(PLATFORMS)))
+ifndef MULTI_ARCH_BUILD
 IMAGE_PLATFORMS := $(subst _,/,$(subst $(SPACE),$(COMMA),$(filter linux_%,$(PLATFORMS))))
+endif
 IMAGE_PLATFORMS_LIST := $(subst _,/,$(filter linux_%,$(PLATFORMS)))
 IMAGE_PLATFORM := $(subst _,/,$(PLATFORM))
 
@@ -110,24 +112,46 @@ $(foreach r,$(REGISTRY_ORGS), $(foreach i,$(IMAGES),$(eval $(call repo.targets,$
 # ====================================================================================
 # Common Targets
 
+ifdef MULTI_ARCH_BUILD
+do.build.image.%:
+	@$(MAKE) -C $(IMAGE_DIR)/$* IMAGE_PLATFORMS=$(IMAGE_PLATFORMS) IMAGE=$(BUILD_REGISTRY)/$* img.build
+else
 do.build.image.%:
 	@$(MAKE) -C $(IMAGE_DIR)/$* IMAGE_PLATFORMS=$(IMAGE_PLATFORM) IMAGE=$(BUILD_REGISTRY)/$*-$(ARCH) img.build
-do.build.images: $(foreach i,$(IMAGES), do.build.image.$(i))
+endif
+
+do.build.images: go.build $(foreach i,$(IMAGES), do.build.image.$(i))
 do.skip.images:
 	@$(OK) Skipping image build for unsupported platform $(IMAGE_PLATFORM)
 
+ifdef MULTI_ARCH_BUILD
+build.artifacts.platform: do.build.images
+else
 ifneq ($(filter $(IMAGE_PLATFORM),$(IMAGE_PLATFORMS_LIST)),)
 build.artifacts.platform: do.build.images
 else
 build.artifacts.platform: do.skip.images
 endif
+endif
+
 build.done: img.done
 clean: img.clean img.release.clean
+
+# Multi-arch publish targets
+ifdef MULTI_ARCH_BUILD
+do.publish.image.%:
+	@$(MAKE) -C $(IMAGE_DIR)/$* IMAGE_PLATFORMS=$(IMAGE_PLATFORMS) IMAGE=$(BUILD_REGISTRY)/$* img.publish
+do.publish.images: $(foreach i,$(IMAGES), do.publish.image.$(i))
+endif
 
 # only publish images for main / master and release branches by default
 RELEASE_BRANCH_FILTER ?= main master release-%
 ifneq ($(filter $(RELEASE_BRANCH_FILTER),$(BRANCH_NAME)),)
+ifdef MULTI_ARCH_BUILD
+publish.artifacts: do.publish.images
+else
 publish.artifacts: $(foreach r,$(REGISTRY_ORGS), $(foreach i,$(IMAGES),img.release.publish.$(r).$(i)))
+endif
 endif
 
 promote.artifacts: $(foreach r,$(REGISTRY_ORGS), $(foreach i,$(IMAGES),img.release.promote.$(r).$(i)))

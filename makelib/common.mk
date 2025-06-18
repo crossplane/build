@@ -140,16 +140,22 @@ ifeq ($(origin PLATFORM),undefined)
 PLATFORM := $(TARGET_PLATFORM)
 # if the target platform is on the supported list add it to the single build target
 ifneq ($(filter $(PLATFORMS),$(TARGET_PLATFORM)),)
+ifndef MULTI_ARCH_BUILD
 BUILD_PLATFORMS = $(TARGET_PLATFORM)
+endif
 endif
 
 # for convenience always build the linux platform when building on mac
 ifneq ($(HOSTOS),linux)
+ifndef MULTI_ARCH_BUILD
 BUILD_PLATFORMS += linux_$(TARGETARCH)
+endif
 endif
 
 else
+ifndef MULTI_ARCH_BUILD
 BUILD_PLATFORMS = $(PLATFORM)
+endif
 endif
 
 OS := $(word 1, $(subst _, ,$(PLATFORM)))
