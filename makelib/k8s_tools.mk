@@ -1,4 +1,4 @@
-# Copyright 2016 The Upbound Authors. All rights reserved.
+# Copyright 2025 The Crossplane Authors. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -40,17 +40,8 @@ KUBECTL := $(TOOLS_HOST_DIR)/kubectl-$(KUBECTL_VERSION)
 KUSTOMIZE_VERSION ?= v4.5.5
 KUSTOMIZE := $(TOOLS_HOST_DIR)/kustomize-$(KUSTOMIZE_VERSION)
 
-# the version of olm-bundle to use
-OLMBUNDLE_VERSION ?= v0.5.2
-OLMBUNDLE := $(TOOLS_HOST_DIR)/olm-bundle-$(OLMBUNDLE_VERSION)
-
-# the version of up to use
-UP_VERSION ?= v0.28.0
-UP_CHANNEL ?= stable
-UP := $(TOOLS_HOST_DIR)/up-$(UP_VERSION)
-
 # the version of crossplane cli to use
-CROSSPLANE_CLI_VERSION ?= v1.14.5
+CROSSPLANE_CLI_VERSION ?= v1.20.0
 CROSSPLANE_CLI_CHANNEL ?= stable
 CROSSPLANE_CLI := $(TOOLS_HOST_DIR)/crossplane-cli-$(CROSSPLANE_CLI_VERSION)
 
@@ -88,12 +79,12 @@ YQ := $(TOOLS_HOST_DIR)/yq-$(YQ_VERSION)
 # Common Targets
 
 k8s_tools.buildvars:
+	@echo CROSSPLANE_CLI=$(CROSSPLANE_CLI)
 	@echo KCL=$(KCL)
 	@echo KIND=$(KIND)
 	@echo KUBECTL=$(KUBECTL)
 	@echo KUSTOMIZE=$(KUSTOMIZE)
 	@echo OLM_BUNDLE=$(OLM_BUNDLE)
-	@echo UP=$(UP)
 	@echo HELM=$(HELM)
 	@echo KUTTL=$(KUTTL)
 	@echo CHAINSAW=$(CHAINSAW)
@@ -147,20 +138,6 @@ $(KUSTOMIZE):
 	@mv $(TOOLS_HOST_DIR)/tmp-kustomize/kustomize $(KUSTOMIZE)
 	@rm -fr $(TOOLS_HOST_DIR)/tmp-kustomize
 	@$(OK) installing kustomize $(KUSTOMIZE_VERSION)
-
-# olm-bundle download and install
-$(OLMBUNDLE):
-	@$(INFO) installing olm-bundle $(OLMBUNDLE_VERSION)
-	@curl -fsSLo $(OLMBUNDLE) https://github.com/upbound/olm-bundle/releases/download/$(OLMBUNDLE_VERSION)/olm-bundle_$(SAFEHOSTPLATFORM) || $(FAIL)
-	@chmod +x $(OLMBUNDLE)
-	@$(OK) installing olm-bundle $(OLMBUNDLE_VERSION)
-
-# up download and install
-$(UP):
-	@$(INFO) installing up $(UP_VERSION)
-	@curl -fsSLo $(UP) --create-dirs https://cli.upbound.io/$(UP_CHANNEL)/$(UP_VERSION)/bin/$(SAFEHOST_PLATFORM)/up?source=build || $(FAIL)
-	@chmod +x $(UP)
-	@$(OK) installing up $(UP_VERSION)
 
 # Crossplane CLI download and install
 $(CROSSPLANE_CLI):

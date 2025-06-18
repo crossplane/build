@@ -1,4 +1,4 @@
-# Copyright 2022 The Upbound Authors. All rights reserved.
+# Copyright 2025 The Crossplane Authors. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -53,8 +53,8 @@ ifeq ($(origin BUILD_REGISTRY), undefined)
 BUILD_REGISTRY := build-$(shell echo $(HOSTNAME)-$(ROOT_DIR) | $(SHA256SUM) | cut -c1-8)
 endif
 
-XPKG_REG_ORGS ?= xpkg.upbound.io/crossplane
-XPKG_REG_ORGS_NO_PROMOTE ?= xpkg.upbound.io/crossplane
+XPKG_REG_ORGS ?= xpkg.crossplane.io/crossplane
+XPKG_REG_ORGS_NO_PROMOTE ?= xpkg.crossplane.io/crossplane
 XPKG_LINUX_PLATFORMS := $(filter linux_%,$(PLATFORMS))
 XPKG_ARCHS := $(subst linux_,,$(filter linux_%,$(PLATFORMS)))
 XPKG_PLATFORMS := $(subst _,/,$(subst $(SPACE),$(COMMA),$(filter linux_%,$(PLATFORMS))))
@@ -67,9 +67,6 @@ XPKG_PROCESSED_EXAMPLES_DIR=$(XPKG_EXAMPLES_DIR)
 ifeq ($(XPKG_CLEANUP_EXAMPLES_ENABLED),true)
 	XPKG_PROCESSED_EXAMPLES_DIR=$(WORK_DIR)/xpkg-cleaned-examples
 endif
-
-# TODO(negz): Update these targets to use the crossplane CLI, not up.
-UP ?= up
 
 # =====================================================================================
 # XPKG Targets
@@ -84,7 +81,7 @@ endif
 	@$(INFO) Building package $(1)-$(VERSION).xpkg for $(PLATFORM)
 	@mkdir -p $(OUTPUT_DIR)/xpkg/$(PLATFORM)
 	@controller_arg=$$$$(grep -E '^kind:\s+Provider\s*$$$$' $(XPKG_DIR)/crossplane.yaml > /dev/null && echo "--controller $(BUILD_REGISTRY)/$(1)-$(ARCH)"); \
-	$(UP) xpkg build \
+	$(CROSSPLANE_CLI) xpkg build \
 		$$$${controller_arg} \
 		--package-root $(XPKG_DIR) \
 		--auth-ext $(XPKG_AUTH_EXT) \
@@ -103,7 +100,7 @@ $(foreach x,$(XPKGS),$(eval $(call xpkg.build.targets,$(x))))
 define xpkg.release.targets
 xpkg.release.publish.$(1).$(2):
 	@$(INFO) Pushing package $(1)/$(2):$(VERSION)
-	@$(UP) xpkg push \
+	@$(CROSSPLANE_CLI) xpkg push \
 		$(foreach p,$(XPKG_LINUX_PLATFORMS),--package $(XPKG_OUTPUT_DIR)/$(p)/$(2)-$(VERSION).xpkg ) \
 		$(1)/$(2):$(VERSION) || $(FAIL)
 	@$(OK) Pushed package $(1)/$(2):$(VERSION)
