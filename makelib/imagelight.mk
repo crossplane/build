@@ -111,7 +111,7 @@ $(foreach r,$(REGISTRY_ORGS), $(foreach i,$(IMAGES),$(eval $(call repo.targets,$
 # Common Targets
 
 do.build.image.%:
-	@$(MAKE) -C $(IMAGE_DIR)/$* IMAGE_PLATFORMS=$(IMAGE_PLATFORM) IMAGE=$(BUILD_REGISTRY)/$*-$(ARCH) img.build
+	@$(MAKE) -C $(IMAGE_DIR)/$* IMAGE_PLATFORMS=$(IMAGE_PLATFORM) IMAGE=$(BUILD_REGISTRY)/$*:$(VERSION) img.build
 do.build.images: $(foreach i,$(IMAGES), do.build.image.$(i))
 do.skip.images:
 	@$(OK) Skipping image build for unsupported platform $(IMAGE_PLATFORM)
