@@ -64,7 +64,7 @@ KUTTL_VERSION ?= 0.12.1
 KUTTL := $(TOOLS_HOST_DIR)/kuttl-$(KUTTL_VERSION)
 
 # the version of chainsaw to use
-CHAINSAW_VERSION ?= 0.2.0
+CHAINSAW_VERSION ?= 0.2.13
 CHAINSAW := $(TOOLS_HOST_DIR)/chainsaw-$(CHAINSAW_VERSION)
 
 # the version of uptest to use
