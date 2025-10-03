@@ -27,8 +27,8 @@ local.xpkg.init: $(KUBECTL)
 
 local.xpkg.sync: local.xpkg.init $(CROSSPLANE_CLI)
 	@$(INFO) copying local xpkg cache to Crossplane pod
-	@mkdir -p $(XPKG_OUTPUT_DIR)/cache
-	@for pkg in $(XPKG_OUTPUT_DIR)/linux_*/*; do $(CROSSPLANE_CLI) xpkg extract --from-xpkg $$pkg -o $(XPKG_OUTPUT_DIR)/cache/$$(basename $$pkg .xpkg).gz; done
+	@mkdir -p $(XPKG_OUTPUT_DIR)/cache/dev.localhost/dev/
+	@for pkg in $(XPKG_OUTPUT_DIR)/linux_*/*; do $(CROSSPLANE_CLI) xpkg extract --from-xpkg $$pkg -o $(XPKG_OUTPUT_DIR)/cache/dev.localhost/dev/$$(basename $$pkg .xpkg | sed 's/$(PROJECT_NAME)-/$(PROJECT_NAME):/').gz; done
 	@XPPOD=$$($(KUBECTL) -n $(CROSSPLANE_NAMESPACE) get pod -l app=crossplane,patched=true -o jsonpath="{.items[0].metadata.name}"); \
 		$(KUBECTL) -n $(CROSSPLANE_NAMESPACE) cp $(XPKG_OUTPUT_DIR)/cache -c dev $$XPPOD:/tmp
 	@$(OK) copying local xpkg cache to Crossplane pod
@@ -42,5 +42,5 @@ local.xpkg.deploy.provider.%: $(KIND) local.xpkg.sync
 	@$(INFO) deploying provider package $* $(VERSION)
 	@$(KIND) load docker-image $(BUILD_REGISTRY)/$*-$(ARCH) -n $(KIND_CLUSTER_NAME)
 	@echo '{"apiVersion":"pkg.crossplane.io/v1beta1","kind":"DeploymentRuntimeConfig","metadata":{"name":"runtimeconfig-$*"},"spec":{"deploymentTemplate":{"spec":{"selector":{},"strategy":{},"template":{"spec":{"containers":[{"args":["--debug"],"image":"$(BUILD_REGISTRY)/$*-$(ARCH)","name":"package-runtime"}]}}}}}}' | $(KUBECTL) apply -f -
-	@echo '{"apiVersion":"pkg.crossplane.io/v1","kind":"Provider","metadata":{"name":"$*"},"spec":{"package":"$*-$(VERSION).gz","skipDependencyResolution": $(XPKG_SKIP_DEP_RESOLUTION), "packagePullPolicy":"Never","runtimeConfigRef":{"name":"runtimeconfig-$*"}}}' | $(KUBECTL) apply -f -
+	echo '{"apiVersion":"pkg.crossplane.io/v1","kind":"Provider","metadata":{"name":"$*"},"spec":{"package":"dev.localhost/dev/$*:$(VERSION).gz","skipDependencyResolution": $(XPKG_SKIP_DEP_RESOLUTION), "packagePullPolicy":"Never","runtimeConfigRef":{"name":"runtimeconfig-$*"}}}' | $(KUBECTL) apply -f -
 	@$(OK) deploying provider package $* $(VERSION)
