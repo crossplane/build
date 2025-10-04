@@ -29,15 +29,15 @@ KCL_VERSION ?= v0.10.0
 KCL := $(TOOLS_HOST_DIR)/kcl-$(KCL_VERSION)
 
 # the version of kind to use
-KIND_VERSION ?= v0.23.0
+KIND_VERSION ?= v0.30.0
 KIND := $(TOOLS_HOST_DIR)/kind-$(KIND_VERSION)
 
 # the version of kubectl to use
-KUBECTL_VERSION ?= v1.24.3
+KUBECTL_VERSION ?= v1.33.5
 KUBECTL := $(TOOLS_HOST_DIR)/kubectl-$(KUBECTL_VERSION)
 
 # the version of kustomize to use
-KUSTOMIZE_VERSION ?= v4.5.5
+KUSTOMIZE_VERSION ?= v5.7.1
 KUSTOMIZE := $(TOOLS_HOST_DIR)/kustomize-$(KUSTOMIZE_VERSION)
 
 # the version of crossplane cli to use
@@ -47,7 +47,7 @@ CROSSPLANE_CLI := $(TOOLS_HOST_DIR)/crossplane-cli-$(CROSSPLANE_CLI_VERSION)
 
 # the version of helm 3 to use
 USE_HELM ?= false
-HELM_VERSION ?= v3.9.1
+HELM_VERSION ?= v3.18.6
 HELM := $(TOOLS_HOST_DIR)/helm-$(HELM_VERSION)
 
 # If we enable HELM we alias HELM to be HELM
@@ -68,7 +68,7 @@ CHAINSAW_VERSION ?= 0.2.13
 CHAINSAW := $(TOOLS_HOST_DIR)/chainsaw-$(CHAINSAW_VERSION)
 
 # the version of uptest to use
-UPTEST_VERSION ?= v0.13.0
+UPTEST_VERSION ?= v2.2.0
 UPTEST := $(TOOLS_HOST_DIR)/uptest-$(UPTEST_VERSION)
 
 # the version of yq to use
