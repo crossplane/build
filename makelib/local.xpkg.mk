@@ -29,10 +29,10 @@ local.xpkg.sync: local.xpkg.init $(CROSSPLANE_CLI)
 	@$(INFO) copying local xpkg cache to Crossplane pod
 	@mkdir -p $(XPKG_OUTPUT_DIR)/cache/xpkg.crossplane.internal/dev
 	@for pkg in $(XPKG_OUTPUT_DIR)/linux_*/*; do \
-  		# given "project-name-v0.17.0-3.gb4eee9f.dirty.xpkg" returns "project-name:v0.17.0-3.gb4eee9f.dirty.gz"
-  		extractedname=$$(basename $$pkg | sed 's/-v\(\([0-9]*\)[.]\([0-9]*\)[.]\([0-9]*\).*\)\.xpkg/:v\1.gz/'); \
-  		$(CROSSPLANE_CLI) xpkg extract --from-xpkg $$pkg -o $(XPKG_OUTPUT_DIR)/cache/xpkg.crossplane.internal/dev/$$extractedname; \
-  	done
+		# given "project-name-v0.17.0-3.gb4eee9f.dirty.xpkg" returns "project-name:v0.17.0-3.gb4eee9f.dirty.gz"
+		extractedname=$$(basename $$pkg | sed 's/-v\(\([0-9]*\)[.]\([0-9]*\)[.]\([0-9]*\).*\)\.xpkg/:v\1.gz/'); \
+		$(CROSSPLANE_CLI) xpkg extract --from-xpkg $$pkg -o $(XPKG_OUTPUT_DIR)/cache/xpkg.crossplane.internal/dev/$$extractedname; \
+	done
 	@XPPOD=$$($(KUBECTL) -n $(CROSSPLANE_NAMESPACE) get pod -l app=crossplane,patched=true -o jsonpath="{.items[0].metadata.name}"); \
 		$(KUBECTL) -n $(CROSSPLANE_NAMESPACE) cp $(XPKG_OUTPUT_DIR)/cache -c dev $$XPPOD:/tmp
 	@$(OK) copying local xpkg cache to Crossplane pod
