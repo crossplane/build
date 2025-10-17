@@ -45,6 +45,13 @@ local.xpkg.deploy.configuration.%: local.xpkg.sync
 local.xpkg.deploy.provider.%: $(KIND) local.xpkg.sync
 	@$(INFO) deploying provider package $* $(VERSION)
 	@$(KIND) load docker-image $(BUILD_REGISTRY)/$*-$(ARCH) -n $(KIND_CLUSTER_NAME)
-	@echo '{"apiVersion":"pkg.crossplane.io/v1beta1","kind":"DeploymentRuntimeConfig","metadata":{"name":"runtimeconfig-$*"},"spec":{"deploymentTemplate":{"spec":{"selector":{},"strategy":{},"template":{"spec":{"containers":[{"args":["--debug"],"image":"$(BUILD_REGISTRY)/$*-$(ARCH)","name":"package-runtime"}]}}}}}}' | $(KUBECTL) apply -f -
+	@if [ -n "$(DRC_FILE)" ] && [ -f "$(DRC_FILE)" ]; then \
+		echo "Using custom DeploymentRuntimeConfig from $(DRC_FILE)"; \
+		cat "$(DRC_FILE)" | \
+		$(YQ) '.metadata.name = "runtimeconfig-$*" | .spec.deploymentTemplate.spec.template.spec.containers[0].image = "$(BUILD_REGISTRY)/$*-$(ARCH)"' | \
+		$(KUBECTL) apply -f -; \
+	else \
+		echo '{"apiVersion":"pkg.crossplane.io/v1beta1","kind":"DeploymentRuntimeConfig","metadata":{"name":"runtimeconfig-$*"},"spec":{"deploymentTemplate":{"spec":{"selector":{},"strategy":{},"template":{"spec":{"containers":[{"args":["--debug"],"image":"$(BUILD_REGISTRY)/$*-$(ARCH)","name":"package-runtime"}]}}}}}}' | $(KUBECTL) apply -f -; \
+	fi
 	@echo '{"apiVersion":"pkg.crossplane.io/v1","kind":"Provider","metadata":{"name":"$*"},"spec":{"package":"xpkg.crossplane.internal/dev/$*:$(VERSION).gz","skipDependencyResolution": $(XPKG_SKIP_DEP_RESOLUTION), "packagePullPolicy":"Never","runtimeConfigRef":{"name":"runtimeconfig-$*"}}}' | $(KUBECTL) apply -f -
 	@$(OK) deploying provider package $* $(VERSION)
