@@ -35,7 +35,7 @@ HELM_OUTPUT_DIR ?= $(OUTPUT_DIR)/charts
 # the helm index file
 HELM_INDEX := $(HELM_OUTPUT_DIR)/index.yaml
 
-HELM_DOCS_VERSION ?= v1.11.0
+HELM_DOCS_VERSION ?= v1.14.2
 HELM_DOCS_ENABLED ?= false
 HELM_DOCS := $(TOOLS_HOST_DIR)/helm-docs
 
