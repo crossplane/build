@@ -28,7 +28,7 @@ PROJECT_REPO := github.com/crossplane/$(PROJECT_NAME)
 PLATFORMS ?= linux_amd64 linux_arm64
 include build/makelib/common.mk
 
-S3_BUCKET ?= crossplane.releases/myrepo
+S3_BUCKET ?= crossplane-releases/myrepo
 include build/makelib/output.mk
 
 # Setup Go
@@ -38,7 +38,7 @@ include build/makelib/golang.mk
 
 # Setup Helm
 HELM_BASE_URL = https://charts.crossplane.io
-HELM_S3_BUCKET = crossplane.charts
+HELM_S3_BUCKET = crossplane-helm-charts
 HELM_CHARTS = myrepo-api
 HELM_CHART_LINT_ARGS_myrepo-api = --set nameOverride='',imagePullSecrets=''
 include build/makelib/k8s_tools.mk
