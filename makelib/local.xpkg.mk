@@ -45,11 +45,11 @@ local.xpkg.deploy.configuration.%: local.xpkg.sync
 local.xpkg.deploy.provider.%: $(KIND) local.xpkg.sync
 	@$(INFO) deploying provider package $* $(VERSION)
 	@$(KIND) load docker-image $(BUILD_REGISTRY)/$*-$(ARCH) -n $(KIND_CLUSTER_NAME)
-	@if [ -n "$(DRC_FILE)" ] && [ -f "$(DRC_FILE)" ]; then \
+	@if [ -f "$(DRC_FILE)" ]; then \
 		echo "Using custom DeploymentRuntimeConfig from $(DRC_FILE)"; \
-		cat "$(DRC_FILE)" | \
-		$(YQ) '.metadata.name = "runtimeconfig-$*" | .spec.deploymentTemplate.spec.template.spec.containers[0].image = "$(BUILD_REGISTRY)/$*-$(ARCH)"' | \
-		$(KUBECTL) apply -f -; \
+		if [ ! -f "$(YQ)" ]; then echo "Error: YQ is required for custom DRC processing but not available. Please ensure YQ dependency is included in your target."; $(FAIL); fi; \
+		drc_content=$$(cat "$(DRC_FILE)" | $(YQ) '.metadata.name = "runtimeconfig-$*" | (.spec.deploymentTemplate.spec.template.spec.containers[] | select(.name == "package-runtime")).image = "$(BUILD_REGISTRY)/$*-$(ARCH)"') && \
+		echo "$$drc_content" | $(KUBECTL) apply -f - || $(FAIL); \
 	else \
 		echo '{"apiVersion":"pkg.crossplane.io/v1beta1","kind":"DeploymentRuntimeConfig","metadata":{"name":"runtimeconfig-$*"},"spec":{"deploymentTemplate":{"spec":{"selector":{},"strategy":{},"template":{"spec":{"containers":[{"args":["--debug"],"image":"$(BUILD_REGISTRY)/$*-$(ARCH)","name":"package-runtime"}]}}}}}}' | $(KUBECTL) apply -f -; \
 	fi
