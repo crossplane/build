@@ -90,20 +90,21 @@ img.done:
 
 # 1: registry 2: image
 define repo.targets
-img.release.publish.$(1).$(2):
+REGISTRY_SANITIZED := $(subst /,-,$(1))
+img.release.publish.$(REGISTRY_SANITIZED).$(2):
 	@$(MAKE) -C $(IMAGE_DIR)/$(2) IMAGE_PLATFORMS=$(IMAGE_PLATFORMS) IMAGE=$(1)/$(2):$(VERSION) img.publish
-img.release.publish: img.release.publish.$(1).$(2)
+img.release.publish: img.release.publish.$(REGISTRY_SANITIZED).$(2)
 
-img.release.promote.$(1).$(2):
+img.release.promote.$(REGISTRY_SANITIZED).$(2):
 	@$(MAKE) -C $(IMAGE_DIR)/$(2) TO_IMAGE=$(1)/$(2):$(CHANNEL) FROM_IMAGE=$(1)/$(2):$(VERSION) img.promote
 	@[ "$(CHANNEL)" = "master" ] || $(MAKE) -C $(IMAGE_DIR)/$(2) TO_IMAGE=$(1)/$(2):$(VERSION)-$(CHANNEL) FROM_IMAGE=$(1)/$(2):$(VERSION) img.promote
-img.release.promote: img.release.promote.$(1).$(2)
+img.release.promote: img.release.promote.$(REGISTRY_SANITIZED).$(2)
 
-img.release.clean.$(1).$(2):
+img.release.clean.$(REGISTRY_SANITIZED).$(2):
 	@[ -z "$$$$(docker images -q $(1)/$(2):$(VERSION))" ] || docker rmi $(1)/$(2):$(VERSION)
 	@[ -z "$$$$(docker images -q $(1)/$(2):$(VERSION)-$(CHANNEL))" ] || docker rmi $(1)/$(2):$(VERSION)-$(CHANNEL)
 	@[ -z "$$$$(docker images -q $(1)/$(2):$(CHANNEL))" ] || docker rmi $(1)/$(2):$(CHANNEL)
-img.release.clean: img.release.clean.$(1).$(2)
+img.release.clean: img.release.clean.$(REGISTRY_SANITIZED).$(2)
 endef
 $(foreach r,$(REGISTRY_ORGS), $(foreach i,$(IMAGES),$(eval $(call repo.targets,$(r),$(i)))))
 
@@ -127,7 +128,7 @@ clean: img.clean img.release.clean
 # only publish images for main / master and release branches by default
 RELEASE_BRANCH_FILTER ?= main master release-%
 ifneq ($(filter $(RELEASE_BRANCH_FILTER),$(BRANCH_NAME)),)
-publish.artifacts: $(foreach r,$(REGISTRY_ORGS), $(foreach i,$(IMAGES),img.release.publish.$(r).$(i)))
+publish.artifacts: $(foreach r,$(REGISTRY_ORGS), $(foreach i,$(IMAGES),img.release.publish.$(subst /,-,$(r)).$(i)))
 endif
 
-promote.artifacts: $(foreach r,$(REGISTRY_ORGS), $(foreach i,$(IMAGES),img.release.promote.$(r).$(i)))
+promote.artifacts: $(foreach r,$(REGISTRY_ORGS), $(foreach i,$(IMAGES),img.release.promote.$(subst /,-,$(r)).$(i)))
