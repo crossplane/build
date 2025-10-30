@@ -66,7 +66,7 @@ endif
 
 # 1: xpkg
 define xpkg.build.targets
-xpkg.build.$(1):
+xpkg.build.$(1): $(CROSSPLANE_CLI)
 ifeq ($(XPKG_CLEANUP_EXAMPLES_ENABLED),true)
 	@rm -rf $(WORK_DIR)/xpkg-cleaned-examples
 	@GOOS=$(HOSTOS) GOARCH=$(TARGETARCH) go run github.com/upbound/uptest/cmd/cleanupexamples@$(XPKG_CLEANUP_EXAMPLES_VERSION) $(XPKG_EXAMPLES_DIR) $(XPKG_PROCESSED_EXAMPLES_DIR) || $(FAIL)
@@ -90,7 +90,7 @@ $(foreach x,$(XPKGS),$(eval $(call xpkg.build.targets,$(x))))
 
 # 1: registry/org 2: repo
 define xpkg.release.targets
-xpkg.release.publish.$(1).$(2):
+xpkg.release.publish.$(1).$(2): $(CROSSPLANE_CLI)
 	@$(INFO) Pushing package $(1)/$(2):$(VERSION)
 	@$(CROSSPLANE_CLI) xpkg push \
 		$(foreach p,$(XPKG_LINUX_PLATFORMS),--package-files $(XPKG_OUTPUT_DIR)/$(p)/$(2)-$(VERSION).xpkg ) \
