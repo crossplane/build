@@ -37,7 +37,7 @@ HELM_INDEX := $(HELM_OUTPUT_DIR)/index.yaml
 
 HELM_DOCS_VERSION ?= v1.14.2
 HELM_DOCS_ENABLED ?= false
-HELM_DOCS := $(TOOLS_HOST_DIR)/helm-docs
+HELM_DOCS := $(TOOLS_HOST_DIR)/helm-docs-$(HELM_DOCS_VERSION)
 
 HELM_VALUES_TEMPLATE_SKIPPED ?= false
 
@@ -218,5 +218,7 @@ help-special: helm.help
 
 $(HELM_DOCS):
 	@$(INFO) installing helm-docs
-	@GOBIN=$(TOOLS_HOST_DIR) $(GOHOST) install github.com/norwoodj/helm-docs/cmd/helm-docs@$(HELM_DOCS_VERSION) || $(FAIL)
+	@GOBIN=$(TOOLS_HOST_DIR)/tmp-helm-docs $(GOHOST) install github.com/norwoodj/helm-docs/cmd/helm-docs@$(HELM_DOCS_VERSION) || $(FAIL)
+	@mv $(TOOLS_HOST_DIR)/tmp-helm-docs/helm-docs $(HELM_DOCS) || $(FAIL)
+	@rm -fr $(TOOLS_HOST_DIR)/tmp-helm-docs || $(FAIL)
 	@$(OK) installing helm-docs
