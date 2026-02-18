@@ -25,13 +25,23 @@ local.xpkg.init: $(KUBECTL)
 	fi
 	@$(OK) patching Crossplane with dev sidecar
 
+LOCAL_XPKG_DIGEST ?= sha256:0000000000000000000000000000000000000000000000000000000000000000
+
 local.xpkg.sync: local.xpkg.init $(CROSSPLANE_CLI)
 	@$(INFO) copying local xpkg cache to Crossplane pod
 	@mkdir -p $(XPKG_OUTPUT_DIR)/cache/xpkg.crossplane.internal/dev
-	@# given "project-name-v0.17.0-3.gb4eee9f.dirty.xpkg" regex returns "project-name:v0.17.0-3.gb4eee9f.dirty.gz"
+	@# Extract each .xpkg and place it under two cache keys so that both
+	@# Crossplane <=2.1 and >=2.2 find the package with pullPolicy: Never.
+	@# - <source>@<digest>.gz — Crossplane <=2.1 uses GetSource() as cache key
+	@# - <friendlyid>.gz     — Crossplane >=2.2 uses FriendlyID() as cache key
+	@#   FriendlyID is ToDNSLabel(truncate(source,50) + "-" + truncate(digest,12)),
+	@#   where ToDNSLabel maps non-alphanumeric chars to "-" and caps at 63 chars.
+	@#   See https://github.com/crossplane/crossplane/blob/v2.2.0-rc.1/internal/xpkg/name.go
 	@for pkg in $(XPKG_OUTPUT_DIR)/linux_*/*; do \
-		extractedname=$$(basename $$pkg | sed 's/-v\(\([0-9]*\)[.]\([0-9]*\)[.]\([0-9]*\).*\)\.xpkg/:v\1.gz/'); \
-		$(CROSSPLANE_CLI) xpkg extract --from-xpkg $$pkg -o $(XPKG_OUTPUT_DIR)/cache/xpkg.crossplane.internal/dev/$$extractedname; \
+		pkgname=$$(basename $$pkg | sed 's/-v\([0-9]*\.[0-9]*\.[0-9]*.*\)\.xpkg//'); \
+		$(CROSSPLANE_CLI) xpkg extract --from-xpkg $$pkg -o "$(XPKG_OUTPUT_DIR)/cache/xpkg.crossplane.internal/dev/$$pkgname@$(LOCAL_XPKG_DIGEST).gz"; \
+		friendlyid=$$(printf '%.50s-%.12s' "xpkg.crossplane.internal/dev/$$pkgname" "$(LOCAL_XPKG_DIGEST)" | sed 's/[^a-z0-9]/-/g' | cut -c1-63 | sed 's/-*$$//'); \
+		cp "$(XPKG_OUTPUT_DIR)/cache/xpkg.crossplane.internal/dev/$$pkgname@$(LOCAL_XPKG_DIGEST).gz" $(XPKG_OUTPUT_DIR)/cache/$$friendlyid.gz; \
 	done
 	@XPPOD=$$($(KUBECTL) -n $(CROSSPLANE_NAMESPACE) get pod -l app=crossplane,patched=true -o jsonpath="{.items[0].metadata.name}"); \
 		$(KUBECTL) -n $(CROSSPLANE_NAMESPACE) cp $(XPKG_OUTPUT_DIR)/cache -c dev $$XPPOD:/tmp
@@ -39,7 +49,7 @@ local.xpkg.sync: local.xpkg.init $(CROSSPLANE_CLI)
 
 local.xpkg.deploy.configuration.%: local.xpkg.sync
 	@$(INFO) deploying configuration package $* $(VERSION)
-	@echo '{"apiVersion":"pkg.crossplane.io/v1","kind":"Configuration","metadata":{"name":"$*"},"spec":{"package":"xpkg.crossplane.internal/dev/$*:$(VERSION).gz","packagePullPolicy":"Never"}}' | $(KUBECTL) apply -f -
+	@echo '{"apiVersion":"pkg.crossplane.io/v1","kind":"Configuration","metadata":{"name":"$*"},"spec":{"package":"xpkg.crossplane.internal/dev/$*@$(LOCAL_XPKG_DIGEST)","packagePullPolicy":"Never"}}' | $(KUBECTL) apply -f -
 	@$(OK) deploying configuration package $* $(VERSION)
 
 local.xpkg.deploy.provider.%: $(KIND) local.xpkg.sync
@@ -53,5 +63,5 @@ local.xpkg.deploy.provider.%: $(KIND) local.xpkg.sync
 	else \
 		echo '{"apiVersion":"pkg.crossplane.io/v1beta1","kind":"DeploymentRuntimeConfig","metadata":{"name":"runtimeconfig-$*"},"spec":{"deploymentTemplate":{"spec":{"selector":{},"strategy":{},"template":{"spec":{"containers":[{"args":["--debug"],"image":"$(BUILD_REGISTRY)/$*-$(ARCH)","name":"package-runtime"}]}}}}}}' | $(KUBECTL) apply -f -; \
 	fi
-	@echo '{"apiVersion":"pkg.crossplane.io/v1","kind":"Provider","metadata":{"name":"$*"},"spec":{"package":"xpkg.crossplane.internal/dev/$*:$(VERSION).gz","skipDependencyResolution": $(XPKG_SKIP_DEP_RESOLUTION), "packagePullPolicy":"Never","runtimeConfigRef":{"name":"runtimeconfig-$*"}}}' | $(KUBECTL) apply -f -
+	@echo '{"apiVersion":"pkg.crossplane.io/v1","kind":"Provider","metadata":{"name":"$*"},"spec":{"package":"xpkg.crossplane.internal/dev/$*@$(LOCAL_XPKG_DIGEST)","skipDependencyResolution": $(XPKG_SKIP_DEP_RESOLUTION), "packagePullPolicy":"Never","runtimeConfigRef":{"name":"runtimeconfig-$*"}}}' | $(KUBECTL) apply -f -
 	@$(OK) deploying provider package $* $(VERSION)
