@@ -90,7 +90,7 @@ $(foreach x,$(XPKGS),$(eval $(call xpkg.build.targets,$(x))))
 
 # 1: registry/org 2: repo
 define xpkg.release.targets
-xpkg.release.publish.$(1).$(2):
+xpkg.release.publish.$(1).$(2): $(CROSSPLANE_CLI)
 	@$(INFO) Pushing package $(1)/$(2):$(VERSION)
 	@$(CROSSPLANE_CLI) xpkg push \
 		$(foreach p,$(XPKG_LINUX_PLATFORMS),--package-files $(XPKG_OUTPUT_DIR)/$(p)/$(2)-$(VERSION).xpkg ) \
