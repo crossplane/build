@@ -262,6 +262,8 @@ version.isdirty:
 # ====================================================================================
 # Helpers
 
+CURL := curl -fsSL --progress-bar --retry 5 --retry-all-errors
+
 SED_CMD?=sed -i -e
 
 COMMA := ,

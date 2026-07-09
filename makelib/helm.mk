@@ -173,10 +173,10 @@ ifdef MUSEUM_URL
 	@$(INFO) pushing helm charts $(1) to chart museum $(MUSEUM_URL)
 ifneq ($(MUSEUM_USER)$(MUSEUM_PASS),"")
 	@$(INFO) curl -u $(MUSEUM_USER):$(MUSEUM_PASS) --data-binary '@$(HELM_OUTPUT_DIR)/$(1)-$(HELM_CHART_VERSION).tgz' $(MUSEUM_URL)/api/charts
-	@curl -u $(MUSEUM_USER):$(MUSEUM_PASS) --data-binary '@$(HELM_OUTPUT_DIR)/$(1)-$(HELM_CHART_VERSION).tgz' $(MUSEUM_URL)/api/charts
+	@$(CURL) -u $(MUSEUM_USER):$(MUSEUM_PASS) --data-binary '@$(HELM_OUTPUT_DIR)/$(1)-$(HELM_CHART_VERSION).tgz' $(MUSEUM_URL)/api/charts
 else
 	@$(INFO) curl --data-binary '@$(HELM_OUTPUT_DIR)/$(1)-$(HELM_CHART_VERSION).tgz' $(MUSEUM_URL)/api/charts
-	@curl --data-binary '@$(HELM_OUTPUT_DIR)/$(1)-$(HELM_CHART_VERSION).tgz' $(MUSEUM_URL)/api/charts
+	@$(CURL) --data-binary '@$(HELM_OUTPUT_DIR)/$(1)-$(HELM_CHART_VERSION).tgz' $(MUSEUM_URL)/api/charts
 endif
 	@$(OK) pushing helm charts to chart museum
 endif

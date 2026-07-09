@@ -99,7 +99,7 @@ build.vars: k8s_tools.buildvars
 $(ISTIO):
 	@$(INFO) installing istio $(ISTIO_VERSION)
 	@mkdir -p $(TOOLS_HOST_DIR)/tmp-istio || $(FAIL)
-	@curl --progress-bar -fsSL https://github.com/istio/istio/releases/download/$(ISTIO_VERSION)/istio-$(ISTIO_VERSION)-$(ISTIO_DOWNLOAD_TUPLE).tar.gz | tar -xz -C $(TOOLS_HOST_DIR)/tmp-istio || $(FAIL)
+	@$(CURL) https://github.com/istio/istio/releases/download/$(ISTIO_VERSION)/istio-$(ISTIO_VERSION)-$(ISTIO_DOWNLOAD_TUPLE).tar.gz | tar -xz -C $(TOOLS_HOST_DIR)/tmp-istio || $(FAIL)
 	@mv $(TOOLS_HOST_DIR)/tmp-istio/istio-$(ISTIO_VERSION)/bin/istioctl $(ISTIO) || $(FAIL)
 	@rm -fr $(TOOLS_HOST_DIR)/tmp-istio || $(FAIL)
 	@$(OK) $(ISTIO) installing istio $(ISTIO_VERSION)
@@ -109,7 +109,7 @@ $(KCL):
 	@$(INFO) installing kcl $(KCL_VERSION)
 	@mkdir -p $(TOOLS_HOST_DIR)/tmp-kcl || $(FAIL)
 	@mkdir -p $(TOOLS_HOST_DIR)
-	@curl -fsSL https://github.com/kcl-lang/cli/releases/download/$(KCL_VERSION)/kcl-$(KCL_VERSION)-$(SAFEHOSTPLATFORM).tar.gz | tar -xz -C $(TOOLS_HOST_DIR)/tmp-kcl || $(FAIL)
+	@$(CURL) https://github.com/kcl-lang/cli/releases/download/$(KCL_VERSION)/kcl-$(KCL_VERSION)-$(SAFEHOSTPLATFORM).tar.gz | tar -xz -C $(TOOLS_HOST_DIR)/tmp-kcl || $(FAIL)
 	@mv $(TOOLS_HOST_DIR)/tmp-kcl/kcl $(KCL) || $(FAIL)
 	@rm -fr $(TOOLS_HOST_DIR)/tmp-kcl || $(FAIL)
 	@chmod +x $(KCL)
@@ -119,14 +119,14 @@ $(KCL):
 $(KIND):
 	@$(INFO) installing kind $(KIND_VERSION)
 	@mkdir -p $(TOOLS_HOST_DIR) || $(FAIL)
-	@curl -fsSLo $(KIND) https://github.com/kubernetes-sigs/kind/releases/download/$(KIND_VERSION)/kind-$(SAFEHOSTPLATFORM) || $(FAIL)
+	@$(CURL) -o $(KIND) https://github.com/kubernetes-sigs/kind/releases/download/$(KIND_VERSION)/kind-$(SAFEHOSTPLATFORM) || $(FAIL)
 	@chmod +x $(KIND)
 	@$(OK) installing kind $(KIND_VERSION)
 
 # kubectl download and install
 $(KUBECTL):
 	@$(INFO) installing kubectl $(KUBECTL_VERSION)
-	@curl -fsSLo $(KUBECTL) --create-dirs https://dl.k8s.io/release/$(KUBECTL_VERSION)/bin/$(HOSTOS)/$(SAFEHOSTARCH)/kubectl || $(FAIL)
+	@$(CURL) -o $(KUBECTL) --create-dirs https://dl.k8s.io/release/$(KUBECTL_VERSION)/bin/$(HOSTOS)/$(SAFEHOSTARCH)/kubectl || $(FAIL)
 	@chmod +x $(KUBECTL)
 	@$(OK) installing kubectl $(KUBECTL_VERSION)
 
@@ -134,7 +134,7 @@ $(KUBECTL):
 $(KUSTOMIZE):
 	@$(INFO) installing kustomize $(KUSTOMIZE_VERSION)
 	@mkdir -p $(TOOLS_HOST_DIR)/tmp-kustomize
-	@curl -fsSL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/$(KUSTOMIZE_VERSION)/kustomize_$(KUSTOMIZE_VERSION)_$(SAFEHOST_PLATFORM).tar.gz | tar -xz -C $(TOOLS_HOST_DIR)/tmp-kustomize
+	@$(CURL) https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/$(KUSTOMIZE_VERSION)/kustomize_$(KUSTOMIZE_VERSION)_$(SAFEHOST_PLATFORM).tar.gz | tar -xz -C $(TOOLS_HOST_DIR)/tmp-kustomize
 	@mv $(TOOLS_HOST_DIR)/tmp-kustomize/kustomize $(KUSTOMIZE)
 	@rm -fr $(TOOLS_HOST_DIR)/tmp-kustomize
 	@$(OK) installing kustomize $(KUSTOMIZE_VERSION)
@@ -142,7 +142,7 @@ $(KUSTOMIZE):
 # Crossplane CLI download and install
 $(CROSSPLANE_CLI):
 	@$(INFO) installing Crossplane CLI $(CROSSPLANE_CLI_VERSION)
-	@curl -fsSLo $(CROSSPLANE_CLI) --create-dirs https://releases.crossplane.io/$(CROSSPLANE_CLI_CHANNEL)/$(CROSSPLANE_CLI_VERSION)/bin/$(SAFEHOST_PLATFORM)/crank?source=build || $(FAIL)
+	@$(CURL) -o $(CROSSPLANE_CLI) --create-dirs https://releases.crossplane.io/$(CROSSPLANE_CLI_CHANNEL)/$(CROSSPLANE_CLI_VERSION)/bin/$(SAFEHOST_PLATFORM)/crank?source=build || $(FAIL)
 	@chmod +x $(CROSSPLANE_CLI)
 	@$(OK) installing Crossplane CLI $(CROSSPLANE_CLI_VERSION)
 
@@ -150,7 +150,7 @@ $(CROSSPLANE_CLI):
 $(HELM):
 	@$(INFO) installing helm $(HELM_VERSION)
 	@mkdir -p $(TOOLS_HOST_DIR)/tmp-helm
-	@curl -fsSL https://get.helm.sh/helm-$(HELM_VERSION)-$(SAFEHOSTPLATFORM).tar.gz | tar -xz -C $(TOOLS_HOST_DIR)/tmp-helm
+	@$(CURL) https://get.helm.sh/helm-$(HELM_VERSION)-$(SAFEHOSTPLATFORM).tar.gz | tar -xz -C $(TOOLS_HOST_DIR)/tmp-helm
 	@mv $(TOOLS_HOST_DIR)/tmp-helm/$(SAFEHOSTPLATFORM)/helm $(HELM)
 	@rm -fr $(TOOLS_HOST_DIR)/tmp-helm
 	@$(OK) installing helm $(HELM_VERSION)
@@ -159,7 +159,7 @@ $(HELM):
 $(KUTTL):
 	@$(INFO) installing kuttl $(KUTTL_VERSION)
 	@mkdir -p $(TOOLS_HOST_DIR)
-	@curl -fsSLo $(KUTTL) --create-dirs https://github.com/kudobuilder/kuttl/releases/download/v$(KUTTL_VERSION)/kubectl-kuttl_$(KUTTL_VERSION)_$(HOST_PLATFORM) || $(FAIL)
+	@$(CURL) -o $(KUTTL) --create-dirs https://github.com/kudobuilder/kuttl/releases/download/v$(KUTTL_VERSION)/kubectl-kuttl_$(KUTTL_VERSION)_$(HOST_PLATFORM) || $(FAIL)
 	@chmod +x $(KUTTL)
 	@$(OK) installing kuttl $(KUTTL_VERSION)
 
@@ -167,7 +167,7 @@ $(KUTTL):
 $(CHAINSAW):
 	@$(INFO) installing chainsaw $(CHAINSAW_VERSION)
 	@mkdir -p $(TOOLS_HOST_DIR)
-	@curl -fsSLo $(CHAINSAW).tar.gz --create-dirs https://github.com/kyverno/chainsaw/releases/download/v$(CHAINSAW_VERSION)/chainsaw_$(SAFEHOST_PLATFORM).tar.gz || $(FAIL)
+	@$(CURL) -o $(CHAINSAW).tar.gz --create-dirs https://github.com/kyverno/chainsaw/releases/download/v$(CHAINSAW_VERSION)/chainsaw_$(SAFEHOST_PLATFORM).tar.gz || $(FAIL)
 	@tar -xvf $(CHAINSAW).tar.gz chainsaw
 	@mv chainsaw $(CHAINSAW)
 	@chmod +x $(CHAINSAW)
@@ -178,7 +178,7 @@ $(CHAINSAW):
 $(UPTEST):
 	@$(INFO) installing uptest $(UPTEST_VERSION)
 	@mkdir -p $(TOOLS_HOST_DIR)
-	@curl -fsSLo $(UPTEST) https://github.com/crossplane/uptest/releases/download/$(UPTEST_VERSION)/uptest_$(SAFEHOSTPLATFORM) || $(FAIL)
+	@$(CURL) -o $(UPTEST) https://github.com/crossplane/uptest/releases/download/$(UPTEST_VERSION)/uptest_$(SAFEHOSTPLATFORM) || $(FAIL)
 	@chmod +x $(UPTEST)
 	@$(OK) installing uptest $(UPTEST_VERSION)
 
@@ -186,6 +186,6 @@ $(UPTEST):
 $(YQ):
 	@$(INFO) installing yq $(YQ_VERSION)
 	@mkdir -p $(TOOLS_HOST_DIR) && \
-	curl -fsSLo $(YQ) https://github.com/mikefarah/yq/releases/download/$(YQ_VERSION)/yq_$(SAFEHOST_PLATFORM) && \
+	$(CURL) -o $(YQ) https://github.com/mikefarah/yq/releases/download/$(YQ_VERSION)/yq_$(SAFEHOST_PLATFORM) && \
 	chmod +x $(YQ) || $(FAIL)
 	@$(OK) installing yq $(YQ_VERSION)
