@@ -22,6 +22,10 @@ ifndef UPTEST_LOCAL_DEPLOY_TARGET
 		`local.xpkg.deploy.provider.$(PROJECT_NAME)` for providers)
 endif
 
+ifndef CROSSPLANE_CLI_SPLIT
+  $(error CROSSPLANE_CLI_SPLIT is not set, ensure to include build/makelib/k8s_tools.mk first)
+endif
+
 UPTEST_ARGS ?=
 
 UPTEST_SKIP_UPDATE ?= false
@@ -37,6 +41,10 @@ endif
 UPTEST_SKIP_DELETE ?= false
 ifeq ($(UPTEST_SKIP_DELETE),true)
     UPTEST_ARGS += --skip-delete
+endif
+
+ifeq ($(CROSSPLANE_CLI_SPLIT),true)
+    UPTEST_ARGS += --use-library-mode
 endif
 
 UPTEST_DEFAULT_TIMEOUT ?=
@@ -75,9 +83,9 @@ e2e: build controlplane.down controlplane.up $(UPTEST_LOCAL_DEPLOY_TARGET) uptes
 
 # Renders crossplane compositions in the current project
 #
-# Composition and Function must be defined, Environment and Observeed Resources are optionally available.
+# Composition and Function must be defined, Environment and Observed Resources are optionally available.
 # The command discovers sees by parsing the `render.crossplane.io/*`-annotations of file found in the
-# examples-directorry, usually: `/examples`. This folder can be overwritten: UPTEST_EXAMPLES_FOLDER='other-examples/'
+# examples-directory, usually: `/examples`. This folder can be overwritten: UPTEST_EXAMPLES_FOLDER='other-examples/'
 #
 # Possible values are:
 #  - composition-path (Composition)
@@ -91,9 +99,22 @@ e2e: build controlplane.down controlplane.up $(UPTEST_LOCAL_DEPLOY_TARGET) uptes
 # of files to render.
 #
 #  Example: `make render UPTEST_RENDER_FILES="path/to/example.yaml,another-example.yaml`
+# The render and validate subcommands moved across Crossplane CLI versions:
+#   < v2.3.0  : `render`             `beta validate`
+#   >= v2.3.0 : `composition render` `resource validate`
+ifeq ($(CROSSPLANE_CLI_SPLIT),true)
+CROSSPLANE_RENDER_CMD = $(CROSSPLANE_CLI) composition render --crossplane-binary $(CROSSPLANE_BIN)
+CROSSPLANE_VALIDATE_CMD = $(CROSSPLANE_CLI) resource validate
+CROSSPLANE_RENDER_DEPS = $(CROSSPLANE_BIN)
+else
+CROSSPLANE_RENDER_CMD = $(CROSSPLANE_CLI) render
+CROSSPLANE_VALIDATE_CMD = $(CROSSPLANE_CLI) beta validate
+CROSSPLANE_RENDER_DEPS =
+endif
+
 UPTEST_RENDER_FILES ?=
 UPTEST_EXAMPLES_FOLDER ?= ./examples
-render: $(CROSSPLANE_CLI) ${YQ}
+render: $(CROSSPLANE_CLI) $(CROSSPLANE_RENDER_DEPS) ${YQ}
 	@indir="$(UPTEST_EXAMPLES_FOLDER)"; \
 	rm -rf "$(CACHE_DIR)/render"; \
 	mkdir -p "$(CACHE_DIR)/render" || true; \
@@ -128,7 +149,7 @@ render: $(CROSSPLANE_CLI) ${YQ}
 			ENVIRONMENT=$${ENVIRONMENT=="null" ? "" : $$ENVIRONMENT}; \
 			OBSERVE=$${OBSERVE=="null" ? "" : $$OBSERVE}; \
 			$(INFO) rendering $$file; \
-			$(CROSSPLANE_CLI) render $$file $$COMPOSITION $$FUNCTION $${ENVIRONMENT:+-e $$ENVIRONMENT} $${OBSERVE:+-o $$OBSERVE} -x >> "$(CACHE_DIR)/render/$${OUT_FILE}.yaml"; \
+			$(CROSSPLANE_RENDER_CMD) $$file $$COMPOSITION $$FUNCTION $${ENVIRONMENT:+-e $$ENVIRONMENT} $${OBSERVE:+-o $$OBSERVE} -x >> "$(CACHE_DIR)/render/$${OUT_FILE}.yaml"; \
 			if [ $$? != 0 ]; then \
 				$(ERR) fail rendering $$file; \
 				exit 1; \
@@ -161,7 +182,7 @@ render.show:
 # Validates the rendered output
 #
 # User can supply custom extensions-folder or file with UPTEST_VALIDATE_EXTENSIONS=path/to/extension
-# Additionally there is the ability to restrict which files should be rendered. Samne rules apply as
+# Additionally there is the ability to restrict which files should be rendered. Same rules apply as
 # for `render` and `render.show` command
 #
 # Note: Extension in this context means:
@@ -184,7 +205,7 @@ render.validate:
 			$(WARN) render produced empty output for: $$file; \
 			continue; \
 		fi; \
-		echo "$${RENDERED}" | $(CROSSPLANE_CLI) beta validate $(UPTEST_VALIDATE_EXTENSIONS) - ; \
+		echo "$${RENDERED}" | $(CROSSPLANE_VALIDATE_CMD) $(UPTEST_VALIDATE_EXTENSIONS) - ; \
 		if [ $$? -ne 0 ]; then \
 			$(ERR) fail validating $$file; \
 			exit 1; \
