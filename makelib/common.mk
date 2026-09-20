@@ -169,7 +169,7 @@ COMMON_SELF_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
 
 # the root directory of this repo
 ifeq ($(origin ROOT_DIR),undefined)
-ROOT_DIR := $(abspath $(shell cd $(COMMON_SELF_DIR)/../.. && pwd -P))
+ROOT_DIR := $(abspath $(lastword $(shell cd $(COMMON_SELF_DIR)/../.. && pwd -P)))
 endif
 
 # the output directory which holds final build produced artifacts
